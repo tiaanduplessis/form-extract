@@ -1,0 +1,46 @@
+{
+  "name": "form-extract",
+  "version": "1.0.0",
+  "description": "Extract values from a form element into an object",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/tiaanduplessis/form-extract",
+    "type": "git"
+  },
+  "homepage": "https://github.com/tiaanduplessis/form-extract",
+  "bugs": "https://github.com/tiaanduplessis/form-extract",
+  "main": "dist/form-extract.js",
+  "browser": "dist/form-extract.js",
+  "jsnext:main": "dist/form-extract.es.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "test": "jest",
+    "lint": "standard 'src/**/*.js'",
+    "lint:fix": "npm run lint -- --fix",
+    "build": "bili --format es --format umd --compress",
+    "start": "npm run test",
+    "pretest": "npm run format && npm run lint:fix",
+    "format": "prettier --print-width 100 --semi false --single-quote --write 'src/**/*.js'",
+    "precommit": "npm test",
+    "prepublish": "npm run build",
+    "release": "npm test && git commit -am $npm_package_version && git tag $npm_package_version && git push --tags && npm publish"
+  },
+  "author": "tiaanduplessis <tiaanduplessis@hotmail.com>",
+  "babel": {
+    "presets": [
+      [
+        "env"
+      ]
+    ]
+  },
+  "devDependencies": {
+    "babel-preset-env": "^1.5.2",
+    "bili": "^0.15.0",
+    "husky": "^0.13.3",
+    "jest": "^20.0.4",
+    "prettier": "~1.3.1",
+    "standard": "^10.0.2"
+  }
+}
