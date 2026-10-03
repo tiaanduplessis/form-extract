@@ -16,31 +16,27 @@
     "dist"
   ],
   "scripts": {
-    "test": "jest",
-    "lint": "standard 'src/**/*.js'",
+    "test": "node --test test/*.test.mjs",
+    "lint": "eslint src test scripts eslint.config.mjs",
     "lint:fix": "npm run lint -- --fix",
-    "build": "bili --format es --format umd --compress",
+    "build": "node scripts/build.mjs",
     "start": "npm run test",
-    "pretest": "npm run format && npm run lint:fix",
-    "format": "prettier --print-width 100 --semi false --single-quote --write 'src/**/*.js'",
-    "precommit": "npm test",
+    "format": "prettier --write \"test/**/*.mjs\" \"scripts/**/*.mjs\" eslint.config.mjs package.json .prettierrc.json",
     "prepublish": "npm run build",
-    "release": "npm test && git commit -am $npm_package_version && git tag $npm_package_version && git push --tags && npm publish"
+    "release": "npm test && git commit -am $npm_package_version && git tag $npm_package_version && git push --tags && npm publish",
+    "format:check": "prettier --check \"test/**/*.mjs\" \"scripts/**/*.mjs\" eslint.config.mjs package.json .prettierrc.json",
+    "check": "npm run lint && npm run format:check && npm run build && npm test && npm run test:package",
+    "test:package": "node scripts/test-package.mjs"
   },
   "author": "tiaanduplessis <tiaanduplessis@hotmail.com>",
-  "babel": {
-    "presets": [
-      [
-        "env"
-      ]
-    ]
-  },
   "devDependencies": {
-    "babel-preset-env": "^1.5.2",
-    "bili": "^0.19.0",
-    "husky": "^0.14.3",
-    "jest": "^21.2.1",
-    "prettier": "~1.9.0",
-    "standard": "^10.0.2"
+    "@babel/core": "8.0.6",
+    "@babel/preset-env": "8.0.6",
+    "@eslint/js": "10.0.1",
+    "eslint": "10.12.0",
+    "jsdom": "30.1.1",
+    "prettier": "3.9.9",
+    "rollup": "4.64.0",
+    "terser": "5.51.2"
   }
 }

@@ -10,8 +10,8 @@
   <a href="https://npmjs.org/package/form-extract">
   <img src="https://img.shields.io/npm/dm/form-extract.svg?style=flat-square" alt="npm downloads" />
   </a>
-  <a href="https://github.com/feross/standard">
-    <img src="https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square" alt="standard JS linter" />
+  <a href="https://eslint.org/">
+    <img src="https://img.shields.io/badge/lint-eslint-brightgreen.svg?style=flat-square" alt="ESLint" />
   </a>
   <a href="https://github.com/prettier/prettier">
     <img src="https://img.shields.io/badge/styled_with-prettier-ff69b4.svg?style=flat-square" alt="prettier code formatting" />
@@ -107,6 +107,50 @@ formExtract('.foo') // formExtract(document.querySelector('.foo')) also works
 // }
 
 ```
+
+## Development
+
+Use Node 22.22.2+ or Node 24.15.0+ and npm. The development dependency versions
+are pinned in `package.json` and `package-lock.json`:
+
+```sh
+npm ci --ignore-scripts
+npm run check
+```
+
+`check` runs lint, formatting checks, the build, and DOM characterization tests.
+The tests use jsdom and Node's built-in test runner against the source, CommonJS,
+ES module, browser UMD, minified UMD, and AMD entries. Test and lint commands do
+not rewrite source files; `npm run format` and `npm run lint:fix` are explicit
+write commands. The original runtime source is kept in its existing style.
+
+The build keeps the existing `dist/form-extract.js`, `dist/form-extract.es.js`,
+`dist/form-extract.min.js`, and source-map paths. Rollup bundles the source, Babel
+preserves the existing ES5 syntax target, and Terser minifies the browser bundle.
+As before, browser APIs such as `Array.from` are not polyfilled. Development's
+Node requirement does not change the package's browser API.
+
+To test an unpacked npm tarball using the same DOM suite:
+
+```sh
+FORM_EXTRACT_PACKAGE=/absolute/path/to/unpacked/package npm test
+```
+
+### Known behavior preserved by the tests
+
+This tooling refresh does not change extraction behavior. In particular, the
+existing truthiness check overwrites an empty first value when a field name is
+repeated. Names such as `constructor` and `toString` also collide with inherited
+object properties. These are characterized as existing defects, not fixed here.
+Unnamed contenteditable elements still use the original `unamed` fallback;
+missing selectors throw `TypeError`, and malformed selectors throw the DOM's
+`SyntaxError`.
+
+The existing `release` command commits, tags, pushes tags, and publishes to npm.
+It is a manual release operation, not a validation command. Its legacy
+`prepublish` hook is not a build-on-publish hook in current npm; run
+`npm run check` before any separately authorized release to avoid stale bundles.
+The release scripts are intentionally unchanged by this tooling refresh.
 
 ## Contributing
 
