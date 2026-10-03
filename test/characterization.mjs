@@ -38,12 +38,11 @@ export const cases = [
     }
   ],
   [
-    'characterizes the existing empty-first-value overwrite',
+    'preserves an empty first value in DOM order',
     ({ extract, document }) => {
       document.body.innerHTML =
         '<form><input name="item" value=""><input name="item" value="two"><input name="item" value="three"></form>'
-      // Existing truthiness bug: the first empty value is lost. Do not fix in a tooling refresh.
-      assert.deepEqual(canonical(extract('form')), { item: ['two', 'three'] })
+      assert.deepEqual(canonical(extract('form')), { item: ['', 'two', 'three'] })
     }
   ],
   [
@@ -134,15 +133,106 @@ export const cases = [
     }
   ],
   [
-    'characterizes inherited-key collisions without repairing them',
+    'preserves repeated empty values, including unnamed fields',
     ({ extract, document }) => {
       document.body.innerHTML =
-        '<form><input name="constructor" value="value"><input name="toString" value="text"></form>'
+        '<form><input name="empty" value=""><input name="empty" value=""><input name="empty" value=""><input value=""><textarea></textarea><input value="last"></form>'
+      assert.deepEqual(canonical(extract('form')), {
+        empty: ['', '', ''],
+        '': ['', '', 'last']
+      })
+    }
+  ],
+  [
+    'keeps mixed repeated controls in DOM order and skips unchecked controls',
+    ({ extract, document }) => {
+      document.body.innerHTML =
+        '<form><input type="checkbox" name="item" value="skipped"><input name="item" value=""><textarea name="item">notes</textarea><select name="item"><option value="" selected>Empty</option></select><input type="checkbox" name="item" value="" checked><input type="radio" name="item" value="chosen" checked><input type="radio" name="item" value="skipped"><div contenteditable="true"></div><div contenteditable="true"><b>last</b></div><input type="submit" name="item" value="skipped"></form>'
+      for (const editable of document.querySelectorAll('[contenteditable]')) {
+        editable.name = 'item'
+      }
+      assert.deepEqual(canonical(extract('form')), {
+        item: ['', 'notes', '', '', 'chosen', '', '<b>last</b>']
+      })
+    }
+  ],
+  [
+    'returns an empty plain object when all controls are excluded',
+    ({ extract, document }) => {
+      document.body.innerHTML =
+        '<form><input type="checkbox" name="__proto__"><input type="radio" name="constructor"><input type="submit" name="toString"><button name="button">Submit</button><div contenteditable="false">ignored</div></form>'
+      const empty = extract(document.createElement('form'))
       const result = extract('form')
-      assert.equal(typeof result.constructor[0], 'function')
-      assert.equal(result.constructor[1], 'value')
-      assert.equal(typeof result.toString[0], 'function')
-      assert.equal(result.toString[1], 'text')
+      assert.deepEqual(Object.keys(result), [])
+      assert.equal(Object.getPrototypeOf(result), Object.getPrototypeOf(empty))
+    }
+  ],
+  [
+    'stores inherited names as own enumerable data properties on a plain object',
+    ({ extract, document }) => {
+      const form = document.createElement('form')
+      const prototype = Object.getPrototypeOf(extract(form))
+      const names = Object.getOwnPropertyNames(prototype)
+      for (const name of names) {
+        const input = document.createElement('input')
+        input.name = name
+        input.value = name === '__proto__' ? '' : 'value'
+        form.appendChild(input)
+      }
+      const result = extract(form)
+      assert.notEqual(prototype, null)
+      assert.equal(Object.getPrototypeOf(prototype), null)
+      assert.equal(Object.getPrototypeOf(result), prototype)
+      assert.deepEqual(Object.keys(result), names)
+      const serialized = canonical(result)
+      for (const name of names) {
+        const value = name === '__proto__' ? '' : 'value'
+        assert.deepEqual(Object.getOwnPropertyDescriptor(result, name), {
+          value,
+          writable: true,
+          enumerable: true,
+          configurable: true
+        })
+        assert.equal(serialized[name], value)
+      }
+    }
+  ],
+  [
+    'collects repeated inherited names without changing the result prototype',
+    ({ extract, document }) => {
+      const form = document.createElement('form')
+      const prototype = Object.getPrototypeOf(extract(form))
+      const names = Object.getOwnPropertyNames(prototype)
+      for (const value of ['', 'second', '']) {
+        for (const name of names) {
+          const input = document.createElement('input')
+          input.name = name
+          input.value = value
+          form.appendChild(input)
+        }
+      }
+      const result = extract(form)
+      assert.equal(Object.getPrototypeOf(result), prototype)
+      assert.deepEqual(Object.keys(result), names)
+      for (const name of names) {
+        assert.deepEqual(canonical(result[name]), ['', 'second', ''])
+        assert.equal(Object.hasOwn(result, name), true)
+      }
+    }
+  ],
+  [
+    'does not carry values between calls or alter earlier results',
+    ({ extract, document }) => {
+      document.body.innerHTML =
+        '<form><input name="__proto__" value=""><input name="__proto__" value="next"><input name="constructor" value="one"></form>'
+      const first = extract('form')
+      const second = extract('form')
+      assert.notEqual(first, second)
+      assert.notEqual(first.__proto__, second.__proto__)
+      first.__proto__.push('changed')
+      assert.deepEqual(canonical(second.__proto__), ['', 'next'])
+      assert.equal(second.constructor, 'one')
+      assert.deepEqual(canonical(extract(document.createElement('form'))), {})
     }
   ]
 ]
