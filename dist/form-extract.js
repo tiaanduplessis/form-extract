@@ -42,14 +42,19 @@
     }, []).reduce(function (result, _ref) {
       var name = _ref.name,
         value = _ref.value;
-      if (result[name]) {
+      if (Object.prototype.hasOwnProperty.call(result, name)) {
         if (Array.isArray(result[name])) {
           result[name].push(value);
         } else {
           result[name] = [result[name], value];
         }
       } else {
-        result[name] = value;
+        Object.defineProperty(result, name, {
+          value: value,
+          enumerable: true,
+          configurable: true,
+          writable: true
+        });
       }
       return result;
     }, {});

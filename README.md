@@ -136,12 +136,18 @@ To test an unpacked npm tarball using the same DOM suite:
 FORM_EXTRACT_PACKAGE=/absolute/path/to/unpacked/package npm test
 ```
 
-### Known behavior preserved by the tests
+### Extraction behavior covered by the tests
 
-This tooling refresh does not change extraction behavior. In particular, the
-existing truthiness check overwrites an empty first value when a field name is
-repeated. Names such as `constructor` and `toString` also collide with inherited
-object properties. These are characterized as existing defects, not fixed here.
+A single field value is returned as a string. Repeated field names produce an
+array in DOM order, retaining every value, including empty strings. Only checked
+checkboxes and radio buttons contribute values; unchecked controls and submit
+inputs are skipped before grouping.
+
+The result is a plain object. Field names such as `__proto__`, `constructor`,
+`toString`, and `hasOwnProperty` are stored as own enumerable data properties,
+just like other names, without changing the result's prototype. Repeated values
+for these names follow the same array behavior.
+
 Unnamed contenteditable elements still use the original `unamed` fallback;
 missing selectors throw `TypeError`, and malformed selectors throw the DOM's
 `SyntaxError`.
